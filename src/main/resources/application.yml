@@ -24,20 +24,79 @@ spring:
     properties:
        hibernate:
        dialect: org.hibernate.dialect.PostgreSQLDialect
-    
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-07330456.okta.com/oauth2/default
+      client:
+       registration:
+          my-internal-client:
+             provider: okta
+             authorization-grant-type: client_credentials,refresh_token, authorization_code
+             scope: internal
+             client-id: 0oaeh8jg9mwBwALmG5d7
+             client-secret: hIkkOlCMtgEQovSDwi2lVgIS3YBcbb1rdy7GuD6KbUJXuroRBNUJNk8V_S4S1H3s
+             
 server:
   port: 8090
   
-#eureka:
-#  instance:
-#    prefer-ip-address: true
-#
-#  client:
-#    fetch-registry: true
-#    register-with-eureka: true
-#    service-url:
-#          defaultZone: http://localhost:8761/eureka
-#          
-#    
-#    
+management: 
+  endpoints:
+    web:
+      exposure:
+        include:
+        - health
+  health: 
+    circuitbreakers:
+      enabled: true
+    
+  endpoint:
+    health:
+      show-details: always
+  
+resilience4j:
+  circuitbreaker:
+    instances: 
+      RatingHotelByUserIdBraker: 
+        register-health-indicator: true
+        event-consumer-buffer-size: 10
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        sliding-window-size: 10
+        sliding-window-type: COUNT_BASED   
+  retry:
+    instances:   
+        RatingHotelRetry:
+          max-attempts: 5
+          wait-duration: 2s
+  ratelimiter:
+    instances:
+      UserRateLimiter:
+        limit-refresh-period: 3s
+        limit-for-period: 5
+        timeout-duration: 5s
+   
+eureka:
+  instance:
+    prefer-ip-address: true
+
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+          defaultZone: http://localhost:8761/eureka
+    
+
+okta:
+  oauth2:
+    issuer: https://dev-07330456.okta.com/oauth2/default
+    audience: api://default
+    client-id: 0oaeh8jg9mwBwALmG5d7
+    client-secret: hIkkOlCMtgEQovSDwi2lVgIS3YBcbb1rdy7GuD6KbUJXuroRBNUJNk8V_S4S1H3s
+
+   
   
